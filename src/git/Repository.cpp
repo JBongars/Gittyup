@@ -832,14 +832,10 @@ bool Repository::merge(const AnnotatedCommit &mergeHead) {
 }
 
 void Repository::rebaseAbort() {
-    // Stop future and then abort the rebase
+    d->mCurrentRebase.abort();
+    d->mCurrentRebase = git::Rebase();
 }
 
-void Repository::rebaseContinue() {
-    // Notify future to continue
-}
-
-// TODO: execute this asynchronous
 // TODO: check that all arguments passed to the signals are valid when the RepoView gets the notification! (Using sharedpointer?)
 void Repository::rebase(const AnnotatedCommit &mergeHead,
                           const QString &overrideUser,
@@ -847,35 +843,52 @@ void Repository::rebase(const AnnotatedCommit &mergeHead,
   git_rebase *r = nullptr;
   git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
   git_rebase_init(&r, d->repo, nullptr, mergeHead, nullptr, &opts);
-  git::Rebase rebase(d->repo, r, overrideUser, overrideEmail);
+  d->mCurrentRebase = git::Rebase(d->repo, r, overrideUser, overrideEmail);
 
-  if (!rebase.isValid())
-      emit d->notifier->rebaseInitError(rebase, parent);
+  if (!d->mCurrentRebase.isValid())
+      emit d->notifier->rebaseInitError(d->mCurrentRebase, parent);
 
+    // start rebasing
+   rebaseContinue(parent);
+}
+
+void Repository::rebaseContinue(LogEntry* parent) {
+
+    if (!rebaseOngoing()) {
+        // rebase anymore available. maybe rebased externally
+        return;
+    }
+
+    // TODO: don't like to have LogEntry* here
+    // TODO: check that all conflicts are resolved
+    // TODO: check if the changes have to be commited or if they are already commited
     // Loop over rebase operations.
-    int i = 0;
-    int count = rebase.count();
-    while (rebase.hasNext()) {
-      git::Commit before = rebase.next();
+    int count = d->mCurrentRebase.count();
+    while (d->mCurrentRebase.hasNext()) {
+      git::Commit before = d->mCurrentRebase.next();
       if (!before.isValid()) {
-        emit d->notifier->rebaseCommitInvalid(rebase, parent);
+        emit d->notifier->rebaseCommitInvalid(d->mCurrentRebase, parent);
         rebaseAbort();
         return;
       }
-      i++;
-      emit d->notifier->rebaseAboutToRebase(rebase, before, i, parent);
+      int currIndex = d->mCurrentRebase.currentIndex();
+      emit d->notifier->rebaseAboutToRebase(d->mCurrentRebase, before, currIndex, parent);
 
-      git::Commit after = rebase.commit();
+      git::Commit after = d->mCurrentRebase.commit();
       if (!after.isValid()) {
-          emit d->notifier->rebaseConflict(rebase, parent);
-          pause(); // until conflict has been resolved
-          // Check if commit is resolved before going on!
+          emit d->notifier->rebaseConflict(d->mCurrentRebase, parent);
+          return; // before ongoing, the user has to fix the conflicts.
       }
 
-      emit d->notifier->rebaseCommitSuccess(rebase, after, before, i, parent);
+      emit d->notifier->rebaseCommitSuccess(d->mCurrentRebase, after, before, currIndex, parent);
     }
 
-    emit d->notifier->rebaseFinished(rebase, parent);
+    emit d->notifier->rebaseFinished(d->mCurrentRebase, parent);
+}
+
+bool Repository::rebaseOngoing() {
+    // TODO: check if not finished externally
+    return d->mCurrentRebase.isValid();
 }
 
 bool Repository::cherryPick(const Commit &commit) {

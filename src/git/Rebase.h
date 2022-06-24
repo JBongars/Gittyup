@@ -12,8 +12,12 @@
 
 #include <QSharedPointer>
 
+// TODO: move to cpp again, forward declaration should be enough
+#include "git2/rebase.h"
+
 struct git_rebase;
 struct git_repository;
+//struct git_rebase_operation;
 
 namespace git {
 
@@ -24,6 +28,8 @@ public:
   bool isValid() const { return !d.isNull(); }
 
   int count() const;
+  size_t currentIndex() const;
+  const git_rebase_operation* operation(size_t index);
   bool hasNext() const;
   Commit next() const;
   Commit commit();

@@ -822,10 +822,12 @@ ToolBar::ToolBar(MainWindow *parent) : QToolBar(parent) {
           [this] { currentView()->refresh(); });
 
   mRebaseContinueButton = new Button(this); // TODO: create different button
+  mRebaseContinueButton->setVisible(false);
   addWidget(mRebaseContinueButton);
   connect(mRebaseContinueButton, &Button::clicked, [this] {currentView()->continueRebase();});
 
   mRebaseAbortButton = new Button(this); // TODO: create different button
+  mRebaseAbortButton->setVisible(false);
   addWidget(mRebaseAbortButton);
   connect(mRebaseAbortButton, &Button::clicked, [this] {currentView()->abortRebase();});
 
@@ -992,6 +994,18 @@ void ToolBar::updateStash() {
   RepoView *view = currentView();
   mStashButton->setEnabled(view && view->isWorkingDirectoryDirty());
   mStashPopButton->setEnabled(view && view->repo().stashRef().isValid());
+}
+
+void ToolBar::updateRebase() {
+    MainWindow *win = qobject_cast<MainWindow *>(window());
+    RepoView *view = win ? win->currentView() : nullptr;
+    if (!view) {
+        mRebaseContinueButton->setVisible(false);
+        mRebaseAbortButton->setVisible(false);
+    }
+    bool rebaseOngoing = view->repo().rebaseOngoing();
+   mRebaseContinueButton->setVisible(view->repo().rebaseOngoing());
+   mRebaseAbortButton->setVisible(view->repo().rebaseOngoing());
 }
 
 void ToolBar::updateView() {

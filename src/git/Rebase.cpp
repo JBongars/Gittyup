@@ -15,7 +15,6 @@
 #include "git2/checkout.h"
 #include "git2/errors.h"
 #include "git2/merge.h"
-#include "git2/rebase.h"
 
 namespace git {
 
@@ -28,8 +27,17 @@ Rebase::Rebase(git_repository *repo, git_rebase *rebase,
 
 int Rebase::count() const { return git_rebase_operation_entrycount(d.data()); }
 
+
+size_t Rebase::currentIndex() const {
+    return git_rebase_operation_current(d.data());
+}
+
+const git_rebase_operation* Rebase::operation(size_t index) {
+    return git_rebase_operation_byindex(d.data(), index);
+}
+
 bool Rebase::hasNext() const {
-  int index = git_rebase_operation_current(d.data());
+  int index = currentIndex();
   int count = git_rebase_operation_entrycount(d.data());
   return (count > 0 && (index == GIT_REBASE_NO_OPERATION || index < count - 1));
 }

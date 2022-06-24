@@ -151,7 +151,6 @@ RepoView::RepoView(const git::Repository &repo, MainWindow *parent)
 
   MenuBar *menuBar = MenuBar::instance(parent);
   connect(this, &RepoView::statusChanged, menuBar, &MenuBar::updateStash);
-  connect(this, &RepoView::statusChanged, menuBar, &MenuBar::updateRebase);
   connect(notifier, &git::RepositoryNotifier::stateChanged, menuBar,
           &MenuBar::updateBranch);
   connect(notifier, &git::RepositoryNotifier::rebaseInitError, this, &RepoView::rebaseInitError);
@@ -163,6 +162,7 @@ RepoView::RepoView(const git::Repository &repo, MainWindow *parent)
 
   ToolBar *toolBar = parent->toolBar();
   connect(this, &RepoView::statusChanged, toolBar, &ToolBar::updateStash);
+  connect(this, &RepoView::statusChanged, toolBar, &ToolBar::updateRebase);
 
   // Initialize index.
   mIndex = new Index(repo, this);
@@ -1395,7 +1395,7 @@ void RepoView::abortRebase() {
 }
 
 void RepoView::continueRebase() {
-    mRepo.rebaseContinue();
+    mRepo.rebaseContinue(nullptr); // TODO: replace nullptr!!!!!!!!!!!
 }
 
 void RepoView::rebase(const git::AnnotatedCommit &upstream, LogEntry *parent) {

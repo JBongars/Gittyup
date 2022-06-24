@@ -201,7 +201,8 @@ public:
                 const QString &overrideUser = QString(),
                 const QString &overrideEmail = QString(), LogEntry *parent = nullptr);
   void rebaseAbort();
-  void rebaseContinue();
+  void rebaseContinue(LogEntry *parent);
+  bool rebaseOngoing();
 
   // cherry-pick
   bool cherryPick(const Commit &commit);
@@ -266,6 +267,7 @@ private:
     bool lfsLocksCached = false;
 
     QSet<Id> starredCommits;
+    git::Rebase mCurrentRebase;
   };
 
   Repository(git_repository *repo);
