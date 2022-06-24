@@ -900,6 +900,7 @@ void MenuBar::update() {
   updateBranch();
   updateSubmodules();
   updateStash();
+  updateRebase();
   updateHistory();
   updateWindow();
 }
@@ -1088,6 +1089,13 @@ void MenuBar::updateStash() {
   mShowStashes->setEnabled(stash);
   mStash->setEnabled(view && view->isWorkingDirectoryDirty());
   mStashPop->setEnabled(stash);
+}
+
+void MenuBar::updateRebase() {
+    rebase ongoing?
+
+   mRebaseContinue.setVisible(ongoing);
+   mRebaseAbort.setVisible(ongoing);
 }
 
 void MenuBar::updateHistory() {

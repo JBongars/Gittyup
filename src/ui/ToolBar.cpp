@@ -821,6 +821,14 @@ ToolBar::ToolBar(MainWindow *parent) : QToolBar(parent) {
   connect(mRefreshButton, &Button::clicked,
           [this] { currentView()->refresh(); });
 
+  mRebaseContinueButton = new Button(this); // TODO: create different button
+  addWidget(mRebaseContinueButton);
+  connect(mRebaseContinueButton, &Button::clicked, [this] {currentView()->continueRebase();});
+
+  mRebaseAbortButton = new Button(this); // TODO: create different button
+  addWidget(mRebaseAbortButton);
+  connect(mRebaseAbortButton, &Button::clicked, [this] {currentView()->abortRebase();});
+
   if (!qgetenv("GITTYUP_OAUTH").isEmpty()) {
     addWidget(new Spacer(4, this));
 

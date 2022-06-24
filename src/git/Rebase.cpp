@@ -19,6 +19,8 @@
 
 namespace git {
 
+Rebase::Rebase(): d(nullptr) {}
+
 Rebase::Rebase(git_repository *repo, git_rebase *rebase,
                const QString &overrideUser, const QString &overrideEmail)
     : mRepo(repo), d(rebase, git_rebase_free), mOverrideUser(overrideUser),
@@ -32,7 +34,7 @@ bool Rebase::hasNext() const {
   return (count > 0 && (index == GIT_REBASE_NO_OPERATION || index < count - 1));
 }
 
-Commit Rebase::next() {
+Commit Rebase::next() const {
   git_rebase_operation *op = nullptr;
   if (git_rebase_next(&op, d.data()))
     return Commit();

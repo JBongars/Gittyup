@@ -26,6 +26,7 @@
 #include "Submodule.h"
 #include "TagRef.h"
 #include "Tree.h"
+#include "log/LogEntry.h"
 #include "git2/buffer.h"
 #include "git2/branch.h"
 #include "git2/checkout.h"
@@ -830,13 +831,51 @@ bool Repository::merge(const AnnotatedCommit &mergeHead) {
   return !error;
 }
 
-Rebase Repository::rebase(const AnnotatedCommit &mergeHead,
+void Repository::rebaseAbort() {
+    // Stop future and then abort the rebase
+}
+
+void Repository::rebaseContinue() {
+    // Notify future to continue
+}
+
+// TODO: execute this asynchronous
+// TODO: check that all arguments passed to the signals are valid when the RepoView gets the notification! (Using sharedpointer?)
+void Repository::rebase(const AnnotatedCommit &mergeHead,
                           const QString &overrideUser,
-                          const QString &overrideEmail) {
-  git_rebase *rebase = nullptr;
+                          const QString &overrideEmail, LogEntry* parent) {
+  git_rebase *r = nullptr;
   git_rebase_options opts = GIT_REBASE_OPTIONS_INIT;
-  git_rebase_init(&rebase, d->repo, nullptr, mergeHead, nullptr, &opts);
-  return Rebase(d->repo, rebase, overrideUser, overrideEmail);
+  git_rebase_init(&r, d->repo, nullptr, mergeHead, nullptr, &opts);
+  git::Rebase rebase(d->repo, r, overrideUser, overrideEmail);
+
+  if (!rebase.isValid())
+      emit d->notifier->rebaseInitError(rebase, parent);
+
+    // Loop over rebase operations.
+    int i = 0;
+    int count = rebase.count();
+    while (rebase.hasNext()) {
+      git::Commit before = rebase.next();
+      if (!before.isValid()) {
+        emit d->notifier->rebaseCommitInvalid(rebase, parent);
+        rebaseAbort();
+        return;
+      }
+      i++;
+      emit d->notifier->rebaseAboutToRebase(rebase, before, i, parent);
+
+      git::Commit after = rebase.commit();
+      if (!after.isValid()) {
+          emit d->notifier->rebaseConflict(rebase, parent);
+          pause(); // until conflict has been resolved
+          // Check if commit is resolved before going on!
+      }
+
+      emit d->notifier->rebaseCommitSuccess(rebase, after, before, i, parent);
+    }
+
+    emit d->notifier->rebaseFinished(rebase, parent);
 }
 
 bool Repository::cherryPick(const Commit &commit) {

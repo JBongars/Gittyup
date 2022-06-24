@@ -25,13 +25,14 @@ public:
 
   int count() const;
   bool hasNext() const;
-  Commit next();
+  Commit next() const;
   Commit commit();
 
   void abort();
   bool finish();
 
 private:
+  Rebase();
   Rebase(git_repository *repo, git_rebase *rebase = nullptr,
          const QString &overrideUser = QString(),
          const QString &overrideEmail = QString());
