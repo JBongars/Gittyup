@@ -871,8 +871,8 @@ void Repository::rebaseContinue(LogEntry* parent) {
         rebaseAbort();
         return;
       }
-      int currIndex = d->mCurrentRebase.currentIndex();
-      emit d->notifier->rebaseAboutToRebase(d->mCurrentRebase, before, currIndex, parent);
+      int currCommit = d->mCurrentRebase.currentIndex() + 1; // for showing to user it makes more sense starting from 1
+      emit d->notifier->rebaseAboutToRebase(d->mCurrentRebase, before, currCommit, parent);
 
       git::Commit after = d->mCurrentRebase.commit();
       if (!after.isValid()) {
@@ -880,7 +880,7 @@ void Repository::rebaseContinue(LogEntry* parent) {
           return; // before ongoing, the user has to fix the conflicts.
       }
 
-      emit d->notifier->rebaseCommitSuccess(d->mCurrentRebase, after, before, currIndex, parent);
+      emit d->notifier->rebaseCommitSuccess(d->mCurrentRebase, after, before, currCommit, parent);
     }
 
     emit d->notifier->rebaseFinished(d->mCurrentRebase, parent);
